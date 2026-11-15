@@ -16,7 +16,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,syste
 body{padding-bottom:env(safe-area-inset-bottom)}
 button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:10px 12px}
-.bar h1{flex:1;margin:0;font-size:17px;font-weight:700;text-align:center;color:var(--accent)}
+.bar h1{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0;font-size:17px;font-weight:700;text-align:center;color:var(--accent)}
 .ib{min-width:38px;height:38px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:18px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .ib:active{transform:scale(.95)}
 #home{padding:12px 12px 40px}
@@ -55,6 +55,15 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
 .err button{margin-top:10px;padding:10px 18px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700}
 #toast{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:20}
 #toast.on{opacity:.95}
+.credit{margin:22px 4px 10px;text-align:center;font-size:11px;color:var(--sub);line-height:1.9}.credit a{color:var(--accent)}
+.kh{margin:12px 0;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--accent2)}
+.kh b{color:var(--accent)}.kh small{display:block;color:var(--sub);margin-top:2px}
+.pb{height:8px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0}.pb i{display:block;height:100%;background:var(--accent)}
+.kh .row{flex-wrap:wrap}.kh .row button{min-width:30%;padding:9px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-weight:600;font-size:14px}
+.kh .row button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+#pl{position:fixed;inset:auto 0 0 0;z-index:8;display:none;background:var(--card);border-top:2px solid var(--accent2);padding:8px 12px calc(8px + env(safe-area-inset-bottom));align-items:center;gap:8px}
+#pl.on{display:flex}#pl select{flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:13px}
+body.pl{padding-bottom:70px}
 </style>
 </head>
 <body>
@@ -62,19 +71,22 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
   <div class="bar" style="margin:-12px -12px 12px"><h1>📗 نور القرآن</h1><button class="ib" id="th" title="الوضع">🌓</button></div>
   <input id="q" type="search" inputmode="search" placeholder="ابحث باسم السورة أو رقمها…" autocomplete="off">
   <div id="resume"></div>
+  <div id="kh"></div>
   <div id="list"></div>
+  <div class="credit">نص القرآن العثماني من مشروع <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil</a> (ترخيص CC BY 3.0) عبر <a href="https://alquran.cloud" target="_blank" rel="noopener">alquran.cloud</a><br>التفسير الميسّر (مجمع الملك فهد) عبر alquran.cloud · التلاوات من <a href="https://everyayah.com" target="_blank" rel="noopener">everyayah.com</a><br>سكينة من YMnotes 🤍</div>
 </div>
 <div id="reader">
   <div class="bar">
     <button class="ib" id="back" aria-label="القائمة">☰</button>
     <h1 id="rt"></h1>
-    <button class="ib" id="fm">أ−</button><button class="ib" id="fp">أ+</button><button class="ib" id="th2">🌓</button>
+    <button class="ib" id="fm">أ−</button><button class="ib" id="fp">أ+</button><button class="ib" id="th2">🌓</button><button class="ib" id="pls" title="استماع">🎧</button>
   </div>
   <div class="rhead"><div class="title" id="st"></div><div class="meta" id="sm"></div></div>
   <div class="bism" id="bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
   <div id="text"></div>
   <div class="nav"><button id="pv">▶ السورة السابقة</button><button id="nx">السورة التالية ◀</button></div>
 </div>
+<div id="pl"><button class="ib" id="pn">⏮</button><button class="ib" id="pp">⏸</button><button class="ib" id="pf">⏭</button><select id="rc"></select><button class="ib" id="px">✕</button></div>
 <div id="sheet"></div>
 <div id="toast"></div>
 <script>
@@ -87,6 +99,7 @@ const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.par
 const CS=tg&&tg.CloudStorage&&tg.isVersionAtLeast&&tg.isVersionAtLeast('6.9')?tg.CloudStorage:null;
 const cloudSet=(k,v)=>{try{CS&&CS.setItem(k,JSON.stringify(v))}catch{}};
 const cloudGet=k=>new Promise(r=>{try{CS?CS.getItem(k,(e,v)=>{try{r(e||!v?null:JSON.parse(v))}catch{r(null)}}):r(null)}catch{r(null)}});
+const TOTAL=604;let PAGES=[],KH=LS.get('kh',null);
 let IDX=[],cur=null,data=null,fs=LS.get('fs',28),theme=LS.get('theme',null),sel=-1;
 const root=document.documentElement;
 function applyTheme(){const t=theme||(tg&&tg.colorScheme)||'light';root.dataset.theme=t;try{tg&&tg.setHeaderColor&&tg.setHeaderColor(t==='dark'?'#12161a':'#f8f3e6');tg&&tg.setBackgroundColor&&tg.setBackgroundColor(t==='dark'?'#12161a':'#f8f3e6')}catch{}}
@@ -106,10 +119,31 @@ function renderResume(){
   const p=LS.get('pos',null);
   $('resume').innerHTML=p&&IDX[p.s-1]?`<div class="resume"><div><b>تابع القراءة</b><small>${IDX[p.s-1].name} · الآية ${ar(p.a)}</small></div><button data-go="${p.s}:${p.a}">متابعة</button></div>`:'';
 }
+const todayStr=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const dayNo=()=>KH?Math.floor((Date.parse(todayStr())-Date.parse(KH.start))/864e5)+1:0;
+const rng=d=>[Math.floor((d-1)*TOTAL/KH.days)+1,Math.floor(d*TOTAL/KH.days)];
+function saveKh(){LS.set('kh',KH);cloudSet('kh',KH)}
+function renderKh(){
+  const el=$('kh');
+  if(!KH){el.innerHTML='<div class="kh"><b>📅 ختمتي</b><small>اختر مدة ختمة القرآن، وسأحدد لك وردك اليومي بالصفحات (٦٠٤ صفحة)</small><div class="row">'+[7,15,30,60,90].map(n=>`<button data-kh="${n}">${ar(n)} يومًا</button>`).join('')+'</div></div>';return}
+  let t=1;while(t<=KH.days&&KH.done.includes(t))t++;
+  if(t>KH.days){el.innerHTML='<div class="kh"><b>🎉 ما شاء الله، أتممت الختمة</b><small>تقبّل الله منك. ابدأ ختمة جديدة متى شئت.</small><div class="row"><button class="pri" data-khreset="1">ختمة جديدة</button></div></div>';return}
+  const d=Math.min(dayNo(),KH.days),[a,b]=rng(t),late=t<d?d-t:0,pr=PAGES[a-1]||[1,1];
+  el.innerHTML=`<div class="kh"><b>📅 ختمتي · اليوم ${ar(t)} من ${ar(KH.days)}</b><small>وردك: الصفحات ${ar(a)} – ${ar(b)}${late?' · متأخر '+ar(late)+' يومًا، لا بأس، أكمل بهدوء':''}</small><div class="pb"><i style="width:${Math.round(KH.done.length/KH.days*100)}%"></i></div><div class="row"><button class="pri" data-go="${pr[0]}:${pr[1]}">افتح وردي</button><button data-khdone="${t}">✅ أتممت وردي</button><button data-khreset="1">تغيير</button></div></div>`;
+}
+function pageOf(s,a){let lo=0,hi=PAGES.length-1,r=0;const k=s*1000+a;while(lo<=hi){const m=(lo+hi)>>1;if(PAGES[m][0]*1000+PAGES[m][1]<=k){r=m;lo=m+1}else hi=m-1}return r+1}
+const RECS=[['Alafasy_128kbps','مشاري العفاسي'],['Husary_128kbps','محمود خليل الحصري'],['Minshawy_Murattal_128kbps','محمد صديق المنشاوي'],['Abdul_Basit_Murattal_192kbps','عبد الباسط عبد الصمد'],['Abdurrahmaan_As-Sudais_192kbps','عبد الرحمن السديس'],['Saood_ash-Shuraym_128kbps','سعود الشريم'],['Hudhaify_128kbps','علي الحذيفي']];
+let rec=LS.get('rec',RECS[0][0]);if(!RECS.some(r=>r[0]===rec))rec=RECS[0][0];
+const au=new Audio();let playing=-1;au.preload='auto';
+const pad=(n,l)=>String(n).padStart(l,'0');
+function playAyah(i){if(!data||i<0||i>=data.a.length){stopAudio();return}playing=i;au.src='https://everyayah.com/data/'+rec+'/'+pad(cur,3)+pad(i+1,3)+'.mp3';au.play().catch(()=>toast('تعذّر تشغيل الصوت'));$('pl').classList.add('on');document.body.classList.add('pl');$('pp').textContent='⏸';
+  document.querySelectorAll('.v.on').forEach(e=>e.classList.remove('on'));const el=document.querySelector('.v[data-i="'+i+'"]');if(el){el.classList.add('on');el.scrollIntoView({block:'center',behavior:'smooth'})}savePos(cur,i+1)}
+function stopAudio(){try{au.pause()}catch{}playing=-1;$('pl').classList.remove('on');document.body.classList.remove('pl');document.querySelectorAll('.v.on').forEach(e=>e.classList.remove('on'))}
+au.onended=()=>playAyah(playing+1);au.onerror=()=>toast('تعذّر تحميل التلاوة');
 function savePos(s,a){const p={s,a};LS.set('pos',p);cloudSet('pos',p)}
 
 async function open(n,a=0,push=true){
-  n=Math.max(1,Math.min(114,n|0));
+  n=Math.max(1,Math.min(114,n|0));if(cur!==n)stopAudio();
   $('home').style.display='none';$('reader').style.display='block';closeSheet();
   const m=IDX[n-1];cur=n;
   $('rt').textContent=m.name;$('st').textContent='سورة '+m.name;$('sm').textContent=m.r+' · '+ar(m.c)+' آية · رقم '+ar(n);
@@ -128,13 +162,13 @@ async function open(n,a=0,push=true){
     if(push)history.replaceState(null,'','?s='+n+(a>0?'&a='+a:''));
   }catch{$('text').innerHTML='<div class="err">تعذّر تحميل السورة.<br><button id="rt2">إعادة المحاولة</button></div>';$('rt2').onclick=()=>open(n,a)}
 }
-function home(){closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();if(tg)tg.BackButton.hide();window.scrollTo(0,0);history.replaceState(null,'','./')}
+function home(){stopAudio();closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();renderKh();if(tg)tg.BackButton.hide();window.scrollTo(0,0);history.replaceState(null,'','./')}
 
 function openSheet(i){
   sel=i;const m=IDX[cur-1];
   document.querySelectorAll('.v.on').forEach(e=>e.classList.remove('on'));
   const el=document.querySelector(`.v[data-i="${i}"]`);el&&el.classList.add('on');
-  $('sheet').innerHTML=`<div class="lbl">${m.name} · الآية ${ar(i+1)}</div><div class="ar">${data.a[i]} ﴿${ar(i+1)}﴾</div><div class="lbl" style="margin-top:6px">التفسير الميسّر</div><div class="tf">${data.t[i]}</div><div class="row"><button id="bm">📌 احفظ موضعي</button><button id="cp">📋 نسخ</button><button id="sh">📤 مشاركة</button></div><div class="row"><button id="ap">◀ السابقة</button><button id="an">التالية ▶</button><button id="cl">إغلاق</button></div>`;
+  $('sheet').innerHTML=`<div class="lbl">${m.name} · الآية ${ar(i+1)}${PAGES.length?' · صفحة '+ar(pageOf(cur,i+1)):''}</div><div class="ar">${data.a[i]} ﴿${ar(i+1)}﴾</div><div class="lbl" style="margin-top:6px">التفسير الميسّر</div><div class="tf">${data.t[i]}</div><div class="row"><button id="pa">▶ استماع</button><button id="bm">📌 موضعي</button><button id="cp">📋 نسخ</button><button id="sh">📤 مشاركة</button></div><div class="row"><button id="ap">◀ السابقة</button><button id="an">التالية ▶</button><button id="cl">إغلاق</button></div>`;
   $('sheet').classList.add('open');savePos(cur,i+1);
 }
 function closeSheet(){$('sheet').classList.remove('open');document.querySelectorAll('.v.on').forEach(e=>e.classList.remove('on'))}
@@ -143,6 +177,9 @@ function ayahText(){const m=IDX[cur-1];return data.a[sel]+' ﴿'+ar(sel+1)+'﴾\
 
 document.addEventListener('click',async e=>{
   const t=e.target,b=t.closest('button'),v=t.closest('.v');
+  if(b&&b.dataset.kh){KH={days:+b.dataset.kh,start:todayStr(),done:[]};saveKh();return renderKh()}
+  if(b&&b.dataset.khdone){const t=+b.dataset.khdone;if(!KH.done.includes(t))KH.done.push(t);saveKh();toast('تقبّل الله منك ✅');return renderKh()}
+  if(b&&b.dataset.khreset){KH=null;LS.set('kh',null);cloudSet('kh',null);return renderKh()}
   if(b&&b.dataset.n)return open(+b.dataset.n);
   if(b&&b.dataset.go){const [s,a]=b.dataset.go.split(':');return open(+s,+a)}
   if(b){switch(b.id){
@@ -153,6 +190,12 @@ document.addEventListener('click',async e=>{
     case 'pv':return open(cur-1);
     case 'nx':return open(cur+1);
     case 'cl':return closeSheet();
+    case 'pa':{const i=sel;closeSheet();return playAyah(i)}
+    case 'pls':{const p=LS.get('pos',null);return playAyah(p&&p.s===cur?p.a-1:0)}
+    case 'pp':if(au.paused){au.play().catch(()=>{});b.textContent='⏸'}else{au.pause();b.textContent='▶'}return;
+    case 'pn':return playAyah(playing-1);
+    case 'pf':return playAyah(playing+1);
+    case 'px':return stopAudio();
     case 'ap':return stepAyah(-1);
     case 'an':return stepAyah(1);
     case 'bm':savePos(cur,sel+1);return toast('تم حفظ موضعك ✅');
@@ -169,8 +212,11 @@ $('q').addEventListener('input',e=>renderList(e.target.value));
   applyTheme();setFs(fs);
   try{IDX=await getJSON('data/index.json')}catch{$('list').innerHTML='<div class="err">تعذّر التحميل. تحقق من الاتصال.<br><button onclick="location.reload()">إعادة المحاولة</button></div>';return}
   renderList();
+  try{PAGES=await getJSON('data/pages.json')}catch{}
+  $('rc').innerHTML=RECS.map(r=>`<option value="${r[0]}"${r[0]===rec?' selected':''}>${r[1]}</option>`).join('');$('rc').onchange=e=>{rec=e.target.value;LS.set('rec',rec);if(playing>=0)playAyah(playing)};
   if(CS){const p=await cloudGet('pos');if(p&&p.s>=1&&p.s<=114&&!LS.get('pos',null))LS.set('pos',p)}
-  renderResume();
+  if(CS&&!KH){const k=await cloudGet('kh');if(k&&k.days&&Array.isArray(k.done)){KH=k;LS.set('kh',k)}}
+  renderResume();renderKh();
   const P=new URLSearchParams(location.search),sp=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';
   let s=+P.get('s'),a=+P.get('a')||0;
   const m=/^(\d{1,3})(?:[_:-](\d{1,3}))?$/.exec(sp);if(!s&&m){s=+m[1];a=+m[2]||0}
