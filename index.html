@@ -64,16 +64,33 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
 #pl{position:fixed;inset:auto 0 0 0;z-index:8;display:none;background:var(--card);border-top:2px solid var(--accent2);padding:8px 12px calc(8px + env(safe-area-inset-bottom));align-items:center;gap:8px}
 #pl.on{display:flex}#pl select{flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:13px}
 body.pl{padding-bottom:70px}
+.tabs{display:flex;gap:6px;margin:0 0 12px}.tabs button{flex:1;padding:10px 4px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:700;font-size:14px;color:var(--sub)}.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:6px 2px 10px;text-align:center}
+.stb{display:flex;align-items:center;gap:10px;margin:2px 0 10px}.stb b{color:var(--accent);font-size:17px}
+.stx{font-family:'Amiri Quran','Traditional Arabic',serif;font-size:var(--fs);line-height:2.25;text-align:justify;padding:8px 6px;margin-top:6px}
+.tfd{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:8px 0}.tfd summary{cursor:pointer;font-weight:700;color:var(--accent)}.tfd p{line-height:1.9;font-size:15px;margin:8px 0}
+.stn{margin:8px 0}.stn button,.hc .row button,.srow button{padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:14px;flex:1}.stn button:disabled{opacity:.35}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.chip{padding:7px 12px;border-radius:20px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:600}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.srow{display:flex;gap:8px;margin-bottom:8px}.srow input{flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16px;outline:none}
+.hc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0;box-shadow:var(--shadow)}.hh{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:6px}
+.ht{font-family:'Amiri Quran','Traditional Arabic',serif;font-size:calc(var(--fs)*.8);line-height:2.1;text-align:justify}.ht.clamp{max-height:9.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent)}
+.more{color:var(--accent);font-weight:700;padding:4px 0;font-size:13px}.gr{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--bg);font-size:13px;line-height:1.8}
+.hc .row{margin-top:8px}.row .pri{background:var(--accent);color:#fff;border-color:var(--accent)}
 </style>
 </head>
 <body>
 <div id="home">
   <div class="bar" style="margin:-12px -12px 12px"><h1>📗 نور القرآن</h1><button class="ib" id="th" title="الوضع">🌓</button></div>
+  <div class="tabs"><button data-tab="s">📖 السور</button><button data-tab="st">📚 القصص</button><button data-tab="h">📜 الأحاديث</button></div>
+  <div id="tab-s">
   <input id="q" type="search" inputmode="search" placeholder="ابحث باسم السورة أو رقمها…" autocomplete="off">
   <div id="resume"></div>
   <div id="kh"></div>
   <div id="list"></div>
-  <div class="credit">نص القرآن العثماني من مشروع <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil</a> (ترخيص CC BY 3.0) عبر <a href="https://alquran.cloud" target="_blank" rel="noopener">alquran.cloud</a><br>التفسير الميسّر (مجمع الملك فهد) عبر alquran.cloud · التلاوات من <a href="https://everyayah.com" target="_blank" rel="noopener">everyayah.com</a><br>سكينة من YMnotes 🤍</div>
+  </div>
+  <div id="tab-st" style="display:none"></div>
+  <div id="tab-h" style="display:none"></div>
+  <div class="credit" id="mcredit">نص القرآن العثماني من مشروع <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil</a> (ترخيص CC BY 3.0) عبر <a href="https://alquran.cloud" target="_blank" rel="noopener">alquran.cloud</a><br>التفسير الميسّر (مجمع الملك فهد) عبر alquran.cloud · التلاوات من <a href="https://everyayah.com" target="_blank" rel="noopener">everyayah.com</a><br>سكينة من YMnotes 🤍</div>
 </div>
 <div id="reader">
   <div class="bar">
@@ -109,6 +126,12 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clear
 async function getJSON(u){const r=await fetch(u);if(!r.ok)throw Error(r.status);return r.json()}
 const cache={};
 async function surah(n){return cache[n]||(cache[n]=await getJSON('data/'+n+'.json'))}
+window.NQ={$,ar,norm,getJSON,toast,tg,mods:{},stack:[],IDX:()=>IDX,surah:n=>surah(n),open:(s,a)=>{NQ.stack.length=0;return open(s,a)},fs:()=>fs};
+NQ.push=f=>{NQ.stack.push(f);syncBack()};NQ.pop=()=>{const f=NQ.stack.pop();syncBack();f&&f()};
+function syncBack(){if(!tg)return;try{(NQ.stack.length||$('reader').style.display==='block')?tg.BackButton.show():tg.BackButton.hide()}catch{}}
+let tab=LS.get('tab','s');
+function setTab(t){tab=t;LS.set('tab',t);NQ.stack.length=0;syncBack();['s','st','h'].forEach(k=>$('tab-'+k).style.display=k===t?'block':'none');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));$('mcredit').style.display=t==='s'?'block':'none';if(t!=='s')loadExt(t==='st'?'stories':'hadith')}
+function loadExt(n){const m=NQ.mods[n];if(m){m.show();return}const sc=document.createElement('script');sc.src=n+'.js';sc.onload=()=>NQ.mods[n]&&NQ.mods[n].show();sc.onerror=()=>toast('تعذّر التحميل');document.head.appendChild(sc)}
 
 function renderList(f=''){
   const q=norm(f),num=/^\d+$/.test(q)?+q:0;
@@ -162,7 +185,7 @@ async function open(n,a=0,push=true){
     if(push)history.replaceState(null,'','?s='+n+(a>0?'&a='+a:''));
   }catch{$('text').innerHTML='<div class="err">تعذّر تحميل السورة.<br><button id="rt2">إعادة المحاولة</button></div>';$('rt2').onclick=()=>open(n,a)}
 }
-function home(){stopAudio();closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();renderKh();if(tg)tg.BackButton.hide();window.scrollTo(0,0);history.replaceState(null,'','./')}
+function home(){stopAudio();closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();renderKh();syncBack();window.scrollTo(0,0);history.replaceState(null,'','./')}
 
 function openSheet(i){
   sel=i;const m=IDX[cur-1];
@@ -177,6 +200,7 @@ function ayahText(){const m=IDX[cur-1];return data.a[sel]+' ﴿'+ar(sel+1)+'﴾\
 
 document.addEventListener('click',async e=>{
   const t=e.target,b=t.closest('button'),v=t.closest('.v');
+  if(b&&b.dataset.tab)return setTab(b.dataset.tab);
   if(b&&b.dataset.kh){KH={days:+b.dataset.kh,start:todayStr(),done:[]};saveKh();return renderKh()}
   if(b&&b.dataset.khdone){const t=+b.dataset.khdone;if(!KH.done.includes(t))KH.done.push(t);saveKh();toast('تقبّل الله منك ✅');return renderKh()}
   if(b&&b.dataset.khreset){KH=null;LS.set('kh',null);cloudSet('kh',null);return renderKh()}
@@ -208,7 +232,7 @@ document.addEventListener('click',async e=>{
 $('q').addEventListener('input',e=>renderList(e.target.value));
 
 (async()=>{
-  try{tg&&(tg.ready(),tg.expand(),tg.disableVerticalSwipes&&tg.disableVerticalSwipes(),tg.BackButton.onClick(()=>{$('sheet').classList.contains('open')?closeSheet():home()}))}catch{}
+  try{tg&&(tg.ready(),tg.expand(),tg.disableVerticalSwipes&&tg.disableVerticalSwipes(),tg.BackButton.onClick(()=>{if($('sheet').classList.contains('open'))closeSheet();else if($('reader').style.display==='block')home();else if(NQ.stack.length)NQ.pop()}))}catch{}
   applyTheme();setFs(fs);
   try{IDX=await getJSON('data/index.json')}catch{$('list').innerHTML='<div class="err">تعذّر التحميل. تحقق من الاتصال.<br><button onclick="location.reload()">إعادة المحاولة</button></div>';return}
   renderList();
@@ -218,6 +242,7 @@ $('q').addEventListener('input',e=>renderList(e.target.value));
   if(CS&&!KH){const k=await cloudGet('kh');if(k&&k.days&&Array.isArray(k.done)){KH=k;LS.set('kh',k)}}
   renderResume();renderKh();
   const P=new URLSearchParams(location.search),sp=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';
+  setTab(({quran:'s',stories:'st',hadith:'h'})[P.get('tab')]||tab);
   let s=+P.get('s'),a=+P.get('a')||0;
   const m=/^(\d{1,3})(?:[_:-](\d{1,3}))?$/.exec(sp);if(!s&&m){s=+m[1];a=+m[2]||0}
   if(s>=1&&s<=114)open(s,a,false);
