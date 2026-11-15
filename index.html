@@ -76,6 +76,8 @@ body.pl{padding-bottom:70px}
 .ht{font-family:'Amiri Quran','Traditional Arabic',serif;font-size:calc(var(--fs)*.8);line-height:2.1;text-align:justify}.ht.clamp{max-height:9.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent)}
 .more{color:var(--accent);font-weight:700;padding:4px 0;font-size:13px}.gr{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--bg);font-size:13px;line-height:1.8}
 .hc .row{margin-top:8px}.row .pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.vr{display:block;width:100%;text-align:right;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin:6px 0;font-size:16px;line-height:1.9;font-family:'Amiri Quran','Traditional Arabic',serif}.vr .m{font-family:Cairo,sans-serif;display:block;font-size:12px;color:var(--accent);font-weight:700}
+.vh{font-size:13px;color:var(--sub);font-weight:700;margin:12px 2px 2px}
 </style>
 </head>
 <body>
@@ -83,7 +85,8 @@ body.pl{padding-bottom:70px}
   <div class="bar" style="margin:-12px -12px 12px"><h1>📗 نور القرآن</h1><button class="ib" id="th" title="الوضع">🌓</button></div>
   <div class="tabs"><button data-tab="s">📖 السور</button><button data-tab="st">📚 القصص</button><button data-tab="h">📜 الأحاديث</button></div>
   <div id="tab-s">
-  <input id="q" type="search" inputmode="search" placeholder="ابحث باسم السورة أو رقمها…" autocomplete="off">
+  <input id="q" type="search" inputmode="search" placeholder="ابحث باسم السورة أو رقمها أو بكلمات من آية…" autocomplete="off">
+  <div id="vres"></div>
   <div id="resume"></div>
   <div id="kh"></div>
   <div id="list"></div>
@@ -229,7 +232,21 @@ document.addEventListener('click',async e=>{
   if(v&&$('reader').style.display==='block')return openSheet(+v.dataset.i);
   if(!t.closest('#sheet')&&$('sheet').classList.contains('open'))closeSheet();
 });
-$('q').addEventListener('input',e=>renderList(e.target.value));
+let SI=null,SIN=null,vT=0;
+const nzq=x=>x.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').trim();
+async function verseSearch(q){
+  const el=$('vres'),w=nzq(q).split(/\s+/).filter(x=>x.length>1);
+  if(!w.length||!/[\u0621-\u064A]/.test(q)){el.innerHTML='';return}
+  try{if(!SI){SI=await getJSON('data/search.json');SIN=SI.map(nzq)}}catch{return}
+  if($('q').value!==q)return;
+  const st=[];let c=0;IDX.forEach(m=>{st.push(c);c+=m.c});
+  const hits=[];
+  for(let i=0;i<SIN.length;i++){const t=SIN[i];let ok=true;for(const x of w){if(!t.includes(x)){ok=false;break}}if(ok){hits.push(i);if(hits.length>=300)break}}
+  const ph=w.join(' ');hits.sort((a,b)=>(SIN[a].includes(ph)?0:1)-(SIN[b].includes(ph)?0:1));
+  const loc=i=>{let lo=0,hi=st.length-1,r=0;while(lo<=hi){const m=(lo+hi)>>1;if(st[m]<=i){r=m;lo=m+1}else hi=m-1}return [r+1,i-st[r]+1]};
+  el.innerHTML=hits.length?'<div class="vh">🔎 '+ar(hits.length)+(hits.length>=300?'+':'')+' آية فيها «'+q.replace(/[<>&]/g,'')+'»</div>'+hits.slice(0,30).map(i=>{const [s,a]=loc(i);return `<button class="vr" data-go="${s}:${a}"><span class="m">سورة ${IDX[s-1].name} · الآية ${ar(a)}</span>${SI[i]}</button>`}).join('')+(hits.length>30?'<div class="note">أول ٣٠ نتيجة. زوّد كلمة لتضييق البحث.</div>':''):'';
+}
+$('q').addEventListener('input',e=>{renderList(e.target.value);clearTimeout(vT);const v=e.target.value.trim();if(v.length<3){$('vres').innerHTML='';return}vT=setTimeout(()=>verseSearch(v),350)});
 
 (async()=>{
   try{tg&&(tg.ready(),tg.expand(),tg.disableVerticalSwipes&&tg.disableVerticalSwipes(),tg.BackButton.onClick(()=>{if($('sheet').classList.contains('open'))closeSheet();else if($('reader').style.display==='block')home();else if(NQ.stack.length)NQ.pop()}))}catch{}
