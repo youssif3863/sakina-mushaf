@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>المصحف — سكينة</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f3e6;--card:#fffaf0;--ink:#1c1b17;--sub:#7a7260;--accent:#0f6b4f;--accent2:#c8a24a;--num:#d32f2f;--line:#e6dcc3;--hl:#fff0b8;--shadow:0 2px 10px rgba(80,60,10,.08)}
+:root[data-theme=dark]{--bg:#12161a;--card:#1b2127;--ink:#ece8dc;--sub:#9aa39d;--accent:#3fbf94;--accent2:#d6b25a;--num:#ff6b6b;--line:#2a323a;--hl:#3a3510;--shadow:none}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,system-ui,sans-serif}
+body{padding-bottom:env(safe-area-inset-bottom)}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:10px 12px}
+.bar h1{flex:1;margin:0;font-size:17px;font-weight:700;text-align:center;color:var(--accent)}
+.ib{min-width:38px;height:38px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:18px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.ib:active{transform:scale(.95)}
+#home{padding:12px 12px 40px}
+#q{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16px;outline:none}
+#q:focus{border-color:var(--accent)}
+.resume{margin:12px 0;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#0a4a37);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:var(--shadow)}
+.resume b{font-size:16px}.resume small{opacity:.85;display:block;margin-top:2px}
+.resume button{background:#fff;color:#0a4a37;padding:8px 16px;border-radius:10px;font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+@media(min-width:520px){.grid{grid-template-columns:1fr 1fr 1fr}}
+.s{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:right}
+.s:active{background:var(--hl)}
+.no{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bg);border:1px solid var(--accent2);color:var(--accent);font-weight:700;font-size:13px}
+.s .n{font-family:'Amiri Quran',serif;font-size:19px;line-height:1.3}
+.s .m{font-size:11px;color:var(--sub)}
+.sec{margin:16px 2px 4px;font-size:13px;color:var(--sub);font-weight:600}
+#reader{display:none}
+.rhead{text-align:center;padding:14px 8px 4px}
+.title{font-family:'Amiri Quran',serif;font-size:30px;color:var(--accent);border:2px solid var(--accent2);border-radius:14px;padding:6px 10px;display:inline-block;min-width:60%;background:var(--card)}
+.meta{color:var(--sub);font-size:12px;margin-top:6px}
+.bism{font-family:'Amiri Quran',serif;text-align:center;font-size:calc(var(--fs)*1.05);margin:14px 0 6px;color:var(--ink)}
+#text{padding:8px 16px 30px;font-family:'Amiri Quran','Traditional Arabic',serif;font-size:var(--fs);line-height:2.25;text-align:justify;text-align-last:center;word-spacing:2px}
+.v{cursor:pointer;border-radius:6px;transition:background .2s}
+.v.on{background:var(--hl)}
+.e{color:var(--num);font-size:.78em;white-space:nowrap;margin:0 2px}
+.nav{display:flex;gap:8px;padding:0 12px 28px}
+.nav button{flex:1;padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:700;color:var(--accent)}
+.nav button:disabled{opacity:.35}
+#sheet{position:fixed;inset:auto 0 0 0;max-height:62vh;overflow:auto;background:var(--card);border-top:2px solid var(--accent2);border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25);padding:14px 16px calc(16px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .25s;z-index:9}
+#sheet.open{transform:none}
+#sheet .ar{font-family:'Amiri Quran',serif;font-size:calc(var(--fs)*.95);line-height:2.1;text-align:center}
+#sheet .tf{font-size:15px;line-height:1.9;color:var(--ink);margin:8px 0;padding-top:8px;border-top:1px dashed var(--line)}
+#sheet .lbl{font-size:12px;color:var(--accent);font-weight:700}
+.row{display:flex;gap:8px;margin-top:8px}.row button{flex:1;padding:10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-weight:600;font-size:14px}
+.err{padding:30px;text-align:center;color:var(--sub)}
+.err button{margin-top:10px;padding:10px 18px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700}
+#toast{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:20}
+#toast.on{opacity:.95}
+</style>
+</head>
+<body>
+<div id="home">
+  <div class="bar" style="margin:-12px -12px 12px"><h1>📗 المصحف الشريف</h1><button class="ib" id="th" title="الوضع">🌓</button></div>
+  <input id="q" type="search" inputmode="search" placeholder="ابحث باسم السورة أو رقمها…" autocomplete="off">
+  <div id="resume"></div>
+  <div id="list"></div>
+</div>
+<div id="reader">
+  <div class="bar">
+    <button class="ib" id="back" aria-label="القائمة">☰</button>
+    <h1 id="rt"></h1>
+    <button class="ib" id="fm">أ−</button><button class="ib" id="fp">أ+</button><button class="ib" id="th2">🌓</button>
+  </div>
+  <div class="rhead"><div class="title" id="st"></div><div class="meta" id="sm"></div></div>
+  <div class="bism" id="bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+  <div id="text"></div>
+  <div class="nav"><button id="pv">▶ السورة السابقة</button><button id="nx">السورة التالية ◀</button></div>
+</div>
+<div id="sheet"></div>
+<div id="toast"></div>
+<script>
+(()=>{
+const tg=window.Telegram&&Telegram.WebApp;
+const $=id=>document.getElementById(id);
+const AR='٠١٢٣٤٥٦٧٨٩',ar=n=>String(n).replace(/\d/g,d=>AR[d]);
+const norm=s=>s.replace(/[ؐ-ًؚ-ٰٟۖ-ۭـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/^ال/,'').trim();
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const CS=tg&&tg.CloudStorage&&tg.isVersionAtLeast&&tg.isVersionAtLeast('6.9')?tg.CloudStorage:null;
+const cloudSet=(k,v)=>{try{CS&&CS.setItem(k,JSON.stringify(v))}catch{}};
+const cloudGet=k=>new Promise(r=>{try{CS?CS.getItem(k,(e,v)=>{try{r(e||!v?null:JSON.parse(v))}catch{r(null)}}):r(null)}catch{r(null)}});
+let IDX=[],cur=null,data=null,fs=LS.get('fs',28),theme=LS.get('theme',null),sel=-1;
+const root=document.documentElement;
+function applyTheme(){const t=theme||(tg&&tg.colorScheme)||'light';root.dataset.theme=t;try{tg&&tg.setHeaderColor&&tg.setHeaderColor(t==='dark'?'#12161a':'#f8f3e6');tg&&tg.setBackgroundColor&&tg.setBackgroundColor(t==='dark'?'#12161a':'#f8f3e6')}catch{}}
+function toggleTheme(){theme=root.dataset.theme==='dark'?'light':'dark';LS.set('theme',theme);applyTheme()}
+function setFs(v){fs=Math.max(18,Math.min(54,v));root.style.setProperty('--fs',fs+'px');LS.set('fs',fs)}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),1600)}
+async function getJSON(u){const r=await fetch(u);if(!r.ok)throw Error(r.status);return r.json()}
+const cache={};
+async function surah(n){return cache[n]||(cache[n]=await getJSON('data/'+n+'.json'))}
+
+function renderList(f=''){
+  const q=norm(f),num=/^\d+$/.test(q)?+q:0;
+  const L=IDX.filter(s=>!q||(num?s.n===num:(norm(s.name).includes(q)||s.en.toLowerCase().includes(q.toLowerCase()))));
+  $('list').innerHTML=(L.length?'<div class="grid">'+L.map(s=>`<button class="s" data-n="${s.n}"><span class="no">${ar(s.n)}</span><span><div class="n">${s.name}</div><div class="m">${s.r} · ${ar(s.c)} آية</div></span></button>`).join('')+'</div>':'<div class="err">لا توجد نتيجة</div>');
+}
+function renderResume(){
+  const p=LS.get('pos',null);
+  $('resume').innerHTML=p&&IDX[p.s-1]?`<div class="resume"><div><b>تابع القراءة</b><small>${IDX[p.s-1].name} · الآية ${ar(p.a)}</small></div><button data-go="${p.s}:${p.a}">متابعة</button></div>`:'';
+}
+function savePos(s,a){const p={s,a};LS.set('pos',p);cloudSet('pos',p)}
+
+async function open(n,a=0,push=true){
+  n=Math.max(1,Math.min(114,n|0));
+  $('home').style.display='none';$('reader').style.display='block';closeSheet();
+  const m=IDX[n-1];cur=n;
+  $('rt').textContent=m.name;$('st').textContent='سورة '+m.name;$('sm').textContent=m.r+' · '+ar(m.c)+' آية · رقم '+ar(n);
+  $('bism').style.display=(n===1||n===9)?'none':'block';
+  $('text').innerHTML='<div class="err">جارٍ التحميل…</div>';
+  $('pv').disabled=n===1;$('nx').disabled=n===114;
+  try{
+    data=await surah(n);
+    if(cur!==n)return;
+    $('text').innerHTML=data.a.map((t,i)=>`<span class="v" data-i="${i}">${t}<span class="e"> ﴿${ar(i+1)}﴾</span></span>`).join(' ');
+    window.scrollTo(0,0);
+    if(a>0){const el=document.querySelector(`.v[data-i="${a-1}"]`);if(el){el.scrollIntoView({block:'center'});el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2200)}}
+    savePos(n,a>0?a:1);
+    if(n<114)surah(n+1).catch(()=>{});
+    if(tg){tg.BackButton.show()}
+    if(push)history.replaceState(null,'','?s='+n+(a>0?'&a='+a:''));
+  }catch{$('text').innerHTML='<div class="err">تعذّر تحميل السورة.<br><button id="rt2">إعادة المحاولة</button></div>';$('rt2').onclick=()=>open(n,a)}
+}
+function home(){closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();if(tg)tg.BackButton.hide();window.scrollTo(0,0);history.replaceState(null,'','./')}
+
+function openSheet(i){
+  sel=i;const m=IDX[cur-1];
+  document.querySelectorAll('.v.on').forEach(e=>e.classList.remove('on'));
+  const el=document.querySelector(`.v[data-i="${i}"]`);el&&el.classList.add('on');
+  $('sheet').innerHTML=`<div class="lbl">${m.name} · الآية ${ar(i+1)}</div><div class="ar">${data.a[i]} ﴿${ar(i+1)}﴾</div><div class="lbl" style="margin-top:6px">التفسير الميسّر</div><div class="tf">${data.t[i]}</div><div class="row"><button id="bm">📌 احفظ موضعي</button><button id="cp">📋 نسخ</button><button id="sh">📤 مشاركة</button></div><div class="row"><button id="ap">◀ السابقة</button><button id="an">التالية ▶</button><button id="cl">إغلاق</button></div>`;
+  $('sheet').classList.add('open');savePos(cur,i+1);
+}
+function closeSheet(){$('sheet').classList.remove('open');document.querySelectorAll('.v.on').forEach(e=>e.classList.remove('on'))}
+function stepAyah(d){let i=sel+d;if(i<0||i>=data.a.length)return;openSheet(i);document.querySelector(`.v[data-i="${i}"]`).scrollIntoView({block:'center',behavior:'smooth'})}
+function ayahText(){const m=IDX[cur-1];return data.a[sel]+' ﴿'+ar(sel+1)+'﴾\n— سورة '+m.name+'\n\nالتفسير الميسّر: '+data.t[sel]}
+
+document.addEventListener('click',async e=>{
+  const t=e.target,b=t.closest('button'),v=t.closest('.v');
+  if(b&&b.dataset.n)return open(+b.dataset.n);
+  if(b&&b.dataset.go){const [s,a]=b.dataset.go.split(':');return open(+s,+a)}
+  if(b){switch(b.id){
+    case 'back':return home();
+    case 'th':case 'th2':return toggleTheme();
+    case 'fp':return setFs(fs+2);
+    case 'fm':return setFs(fs-2);
+    case 'pv':return open(cur-1);
+    case 'nx':return open(cur+1);
+    case 'cl':return closeSheet();
+    case 'ap':return stepAyah(-1);
+    case 'an':return stepAyah(1);
+    case 'bm':savePos(cur,sel+1);return toast('تم حفظ موضعك ✅');
+    case 'cp':try{await navigator.clipboard.writeText(ayahText());toast('تم النسخ ✅')}catch{toast('تعذّر النسخ')}return;
+    case 'sh':{const u='https://t.me/share/url?url='+encodeURIComponent('https://t.me/Sakina_YMnotes_bot')+'&text='+encodeURIComponent(ayahText()+'\n\n🤍 من بوت سكينة');return tg&&tg.openTelegramLink?tg.openTelegramLink(u):window.open(u,'_blank')}
+  }}
+  if(v&&$('reader').style.display==='block')return openSheet(+v.dataset.i);
+  if(!t.closest('#sheet')&&$('sheet').classList.contains('open'))closeSheet();
+});
+$('q').addEventListener('input',e=>renderList(e.target.value));
+
+(async()=>{
+  try{tg&&(tg.ready(),tg.expand(),tg.disableVerticalSwipes&&tg.disableVerticalSwipes(),tg.BackButton.onClick(()=>{$('sheet').classList.contains('open')?closeSheet():home()}))}catch{}
+  applyTheme();setFs(fs);
+  try{IDX=await getJSON('data/index.json')}catch{$('list').innerHTML='<div class="err">تعذّر التحميل. تحقق من الاتصال.<br><button onclick="location.reload()">إعادة المحاولة</button></div>';return}
+  renderList();
+  if(CS){const p=await cloudGet('pos');if(p&&p.s>=1&&p.s<=114&&!LS.get('pos',null))LS.set('pos',p)}
+  renderResume();
+  const P=new URLSearchParams(location.search),sp=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';
+  let s=+P.get('s'),a=+P.get('a')||0;
+  const m=/^(\d{1,3})(?:[_:-](\d{1,3}))?$/.exec(sp);if(!s&&m){s=+m[1];a=+m[2]||0}
+  if(s>=1&&s<=114)open(s,a,false);
+})();
+})();
+</script>
+</body>
+</html>
