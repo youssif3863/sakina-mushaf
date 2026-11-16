@@ -150,9 +150,11 @@ function renderResume(){
 const DAYREFS=['2:152','2:153','2:186','2:201','2:255','2:286','3:8','3:139','3:159','3:173','7:56','8:46','9:40','12:87','13:28','14:7','15:99','16:97','16:128','17:24','18:10','20:25','20:46','21:87','24:35','25:74','29:69','33:41','33:56','39:10','39:53','40:60','49:10','49:13','51:56','57:4','59:22','65:2','65:3','93:3','94:5','94:6','103:1','112:1','2:155','3:200','16:127','11:115','48:4','12:86','35:34','11:6','51:58','29:60','34:39','3:135','4:110','25:70','20:82','66:8','31:12','16:18','27:19','27:62','7:55','9:51','8:2','26:80','17:82','21:83','10:57','17:23','31:14','46:15','20:114','58:11','39:9','96:1','65:7','2:185','2:45','29:45','20:14','2:238','33:35','30:21','66:6','41:34','3:134','16:90','7:199','17:9','1:6'];
 async function renderDayAyah(){
   const el=$('dayayah');if(!el||!IDX.length)return;
+  const fri=new Date().getDay()===5?'<div class="dayc"><div class="dl">🕌 يوم الجمعة</div><div>لا تنسَ سورة الكهف، والإكثار من الصلاة على النبي ﷺ.</div><button data-go="18:1">اقرأ سورة الكهف</button></div>':'';
+  el.innerHTML=fri;
   const r=DAYREFS[Math.floor(Date.parse(todayStr())/864e5)%DAYREFS.length].split(':'),s=+r[0],a=+r[1];
   try{const d=await getJSON('data/'+s+'.json');const t=d&&d.a&&d.a[a-1];if(!t||!IDX[s-1])return;
-    el.innerHTML=`<div class="dayc"><div class="dl">✨ آية اليوم · ${IDX[s-1].name} · الآية ${ar(a)}</div><div class="dar">${t} ﴿${ar(a)}﴾</div><button data-go="${s}:${a}">قراءة وتفسير</button></div>`}catch{}
+    el.innerHTML=fri+`<div class="dayc"><div class="dl">✨ آية اليوم · ${IDX[s-1].name} · الآية ${ar(a)}</div><div class="dar">${t} ﴿${ar(a)}﴾</div><button data-go="${s}:${a}">قراءة وتفسير</button></div>`}catch{}
 }
 const todayStr=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const dayNo=()=>KH?Math.floor((Date.parse(todayStr())-Date.parse(KH.start))/864e5)+1:0;

@@ -13,10 +13,16 @@ function shell(){
   root.innerHTML=`<div class="note">بحث في الأحاديث النبوية من كتب مفتوحة. الأحكام تُنقل كما وردت وتُنسب لأصحابها، ولا نُصدر حكمًا من عندنا.</div>
   <div class="chips">${META.books.map(b=>`<button class="chip${sel===b.k?' on':''}" data-bk="${b.k}">${b.n}</button>`).join('')}<button class="chip${sel==='all'?' on':''}" data-bk="all">كل الكتب</button></div>
   <div class="srow"><input id="hq" type="search" placeholder="اكتب جزءًا من الحديث، أو رقم الحديث…" autocomplete="off" value="${esc(q)}"><button id="hgo" class="ib" style="min-width:64px">بحث</button></div>
-  <div id="hn" class="note" style="display:none"></div><div id="hr"></div>
+  <div id="hday"></div><div id="hn" class="note" style="display:none"></div><div id="hr"></div>
   <div class="credit">النصوص والأحكام من مشروع <a href="https://github.com/fawazahmed0/hadith-api" target="_blank" rel="noopener">hadith-api</a> (مجال عام) المأخوذ عن sunnah.com، وتُنقل الأحكام كما وردت.<br>الترقيم هو ترقيم المصدر وقد يختلف عن طبعتك. للتثبت راجع كتب أهل العلم.</div>`;
   $('hq').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
+  dayCard();
   if(q)render();
+}
+async function dayCard(){
+  try{const b=await book('nawawi'),d=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10),i=Math.floor(Date.parse(d)/864e5)%b.h.length,it=b.h[i],el=$('hday');
+    if(!el||!it)return;
+    el.innerHTML='<div class="dayc"><div class="dl">📜 حديث اليوم · الأربعون النووية · رقم '+esc(it[0])+'</div><div style="line-height:2">'+esc(it[1])+'</div>'+gradeHtml('nawawi',it)+'</div>'}catch{}
 }
 function gradeHtml(bk,it){
   if(it[2]&&it[2].length)return '<div class="gr"><b>الحكم:</b> '+it[2].map(g=>`${META.sc[g[0]]}: ${META.gr[g[1]]}`).join(' · ')+'</div>';
