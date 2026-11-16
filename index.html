@@ -108,7 +108,7 @@ body.pl{padding-bottom:70px}
   <div id="text"></div>
   <div class="nav"><button id="pv">▶ السورة السابقة</button><button id="nx">السورة التالية ◀</button></div>
 </div>
-<div id="pl"><button class="ib" id="pn">⏮</button><button class="ib" id="pp">⏸</button><button class="ib" id="pf">⏭</button><select id="rc"></select><button class="ib" id="px">✕</button></div>
+<div id="pl"><button class="ib" id="pn">⏮</button><button class="ib" id="pp">⏸</button><button class="ib" id="pf">⏭</button><select id="rc"></select><button class="ib" id="pt" title="مؤقت النوم">⏲</button><button class="ib" id="px">✕</button></div>
 <div id="sheet"></div>
 <div id="toast"></div>
 <script>
@@ -131,6 +131,9 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clear
 async function getJSON(u){const r=await fetch(u);if(!r.ok)throw Error(r.status);return r.json()}
 const cache={};
 async function surah(n){return cache[n]||(cache[n]=await getJSON('data/'+n+'.json'))}
+let wl=null;
+async function keepAwake(on){try{if(on){if(!wl&&navigator.wakeLock){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}else if(wl){const w=wl;wl=null;await w.release()}}catch{wl=null}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('reader').style.display==='block')keepAwake(true)});
 window.NQ={$,ar,norm,getJSON,toast,tg,mods:{},stack:[],IDX:()=>IDX,surah:n=>surah(n),open:(s,a)=>{NQ.stack.length=0;return open(s,a)},fs:()=>fs};
 NQ.push=f=>{NQ.stack.push(f);syncBack()};NQ.pop=()=>{const f=NQ.stack.pop();syncBack();f&&f()};
 function syncBack(){if(!tg)return;try{(NQ.stack.length||$('reader').style.display==='block')?tg.BackButton.show():tg.BackButton.hide()}catch{}}
@@ -140,6 +143,8 @@ function loadExt(n){const m=NQ.mods[n];if(m){m.show();return}const sc=document.c
 
 function renderList(f=''){
   const q=norm(f),num=/^\d+$/.test(q)?+q:0;
+  const qa=q.replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)),pm=/^(?:صفحه|ص|page|p)\s*(\d{1,3})$/.exec(qa);
+  if(pm&&PAGES.length&&+pm[1]>=1&&+pm[1]<=TOTAL){const pg=PAGES[+pm[1]-1];if(pg&&IDX[pg[0]-1]){$('list').innerHTML=`<div class="grid"><button class="s" data-go="${pg[0]}:${pg[1]}"><span class="no">${ar(+pm[1])}</span><span><div class="n">صفحة ${ar(+pm[1])}</div><div class="m">${IDX[pg[0]-1].name} · الآية ${ar(pg[1])}</div></span></button></div>`;return}}
   const L=IDX.filter(s=>!q||(num?s.n===num:(norm(s.name).includes(q)||s.en.toLowerCase().includes(q.toLowerCase()))));
   $('list').innerHTML=(L.length?'<div class="grid">'+L.map(s=>`<button class="s" data-n="${s.n}"><span class="no">${ar(s.n)}</span><span><div class="n">${s.name}</div><div class="m">${s.r} · ${ar(s.c)} آية</div></span></button>`).join('')+'</div>':'<div class="err">لا توجد نتيجة</div>');
 }
@@ -148,13 +153,20 @@ function renderResume(){
   $('resume').innerHTML=p&&IDX[p.s-1]?`<div class="resume"><div><b>تابع القراءة</b><small>${IDX[p.s-1].name} · الآية ${ar(p.a)}</small></div><button data-go="${p.s}:${p.a}">متابعة</button></div>`:'';
 }
 const DAYREFS=['2:152','2:153','2:186','2:201','2:255','2:286','3:8','3:139','3:159','3:173','7:56','8:46','9:40','12:87','13:28','14:7','15:99','16:97','16:128','17:24','18:10','20:25','20:46','21:87','24:35','25:74','29:69','33:41','33:56','39:10','39:53','40:60','49:10','49:13','51:56','57:4','59:22','65:2','65:3','93:3','94:5','94:6','103:1','112:1','2:155','3:200','16:127','11:115','48:4','12:86','35:34','11:6','51:58','29:60','34:39','3:135','4:110','25:70','20:82','66:8','31:12','16:18','27:19','27:62','7:55','9:51','8:2','26:80','17:82','21:83','10:57','17:23','31:14','46:15','20:114','58:11','39:9','96:1','65:7','2:185','2:45','29:45','20:14','2:238','33:35','30:21','66:6','41:34','3:134','16:90','7:199','17:9','1:6'];
+function hijriChip(){
+  try{const p={};new Intl.DateTimeFormat('en-u-ca-islamic-umalqura',{day:'numeric',month:'numeric',year:'numeric'}).formatToParts(new Date()).forEach(x=>{p[x.type]=x.value});
+    const MN=['محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'],d=+p.day,m=+p.month;
+    if(!d||!MN[m-1])return '';
+    let n='';if(m===9)n='🌙 رمضان مبارك';else if(m===12&&d===9)n='🤍 يوم عرفة (إن وافق رؤية بلدك)';else if(d>=13&&d<=15&&!(m===12&&d===13))n='🌙 من الأيام البيض، يُستحب صيامها';
+    return `<div class="dayc"><div class="dl">🗓 ${ar(d)} ${MN[m-1]} ${ar(parseInt(p.year,10))} هـ (تقويم أم القرى)</div>${n?'<div>'+n+'</div>':''}</div>`}catch{return ''}
+}
 async function renderDayAyah(){
   const el=$('dayayah');if(!el||!IDX.length)return;
   const fri=new Date().getDay()===5?'<div class="dayc"><div class="dl">🕌 يوم الجمعة</div><div>لا تنسَ سورة الكهف، والإكثار من الصلاة على النبي ﷺ.</div><button data-go="18:1">اقرأ سورة الكهف</button></div>':'';
-  el.innerHTML=fri;
+  const hj=hijriChip();el.innerHTML=hj+fri;
   const r=DAYREFS[Math.floor(Date.parse(todayStr())/864e5)%DAYREFS.length].split(':'),s=+r[0],a=+r[1];
   try{const d=await getJSON('data/'+s+'.json');const t=d&&d.a&&d.a[a-1];if(!t||!IDX[s-1])return;
-    el.innerHTML=fri+`<div class="dayc"><div class="dl">✨ آية اليوم · ${IDX[s-1].name} · الآية ${ar(a)}</div><div class="dar">${t} ﴿${ar(a)}﴾</div><button data-go="${s}:${a}">قراءة وتفسير</button></div>`}catch{}
+    el.innerHTML=hj+fri+`<div class="dayc"><div class="dl">✨ آية اليوم · ${IDX[s-1].name} · الآية ${ar(a)}</div><div class="dar">${t} ﴿${ar(a)}﴾</div><button data-go="${s}:${a}">قراءة وتفسير</button></div>`}catch{}
 }
 const todayStr=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const dayNo=()=>KH?Math.floor((Date.parse(todayStr())-Date.parse(KH.start))/864e5)+1:0;
@@ -171,6 +183,8 @@ function renderKh(){
 function pageOf(s,a){let lo=0,hi=PAGES.length-1,r=0;const k=s*1000+a;while(lo<=hi){const m=(lo+hi)>>1;if(PAGES[m][0]*1000+PAGES[m][1]<=k){r=m;lo=m+1}else hi=m-1}return r+1}
 const RECS=[['Alafasy_128kbps','مشاري العفاسي'],['Husary_128kbps','محمود خليل الحصري'],['Minshawy_Murattal_128kbps','محمد صديق المنشاوي'],['Abdul_Basit_Murattal_192kbps','عبد الباسط عبد الصمد'],['Abdurrahmaan_As-Sudais_192kbps','عبد الرحمن السديس'],['Saood_ash-Shuraym_128kbps','سعود الشريم'],['Hudhaify_128kbps','علي الحذيفي']];
 let rec=LS.get('rec',RECS[0][0]);if(!RECS.some(r=>r[0]===rec))rec=RECS[0][0];
+let slT=null,slI=0;const SLEEP=[0,15,30,60];
+function cycleSleep(){slI=(slI+1)%SLEEP.length;clearTimeout(slT);slT=null;const m=SLEEP[slI];$('pt').textContent=m?'⏲'+ar(m):'⏲';if(m){slT=setTimeout(()=>{stopAudio();slI=0;$('pt').textContent='⏲'},m*6e4);toast('سيتوقف الصوت بعد '+ar(m)+' دقيقة')}else toast('تم إلغاء مؤقت النوم')}
 const au=new Audio();let playing=-1;au.preload='auto';
 const pad=(n,l)=>String(n).padStart(l,'0');
 function playAyah(i){if(!data||i<0||i>=data.a.length){stopAudio();return}playing=i;au.src='https://everyayah.com/data/'+rec+'/'+pad(cur,3)+pad(i+1,3)+'.mp3';au.play().catch(()=>toast('تعذّر تشغيل الصوت'));$('pl').classList.add('on');document.body.classList.add('pl');$('pp').textContent='⏸';
@@ -181,7 +195,7 @@ function savePos(s,a){const p={s,a};LS.set('pos',p);cloudSet('pos',p)}
 
 async function open(n,a=0,push=true){
   n=Math.max(1,Math.min(114,n|0));if(cur!==n)stopAudio();
-  $('home').style.display='none';$('reader').style.display='block';closeSheet();
+  $('home').style.display='none';$('reader').style.display='block';closeSheet();keepAwake(true);
   const m=IDX[n-1];cur=n;
   $('rt').textContent=m.name;$('st').textContent='سورة '+m.name;$('sm').textContent=m.r+' · '+ar(m.c)+' آية · رقم '+ar(n);
   $('bism').style.display=(n===1||n===9)?'none':'block';
@@ -199,7 +213,7 @@ async function open(n,a=0,push=true){
     if(push)history.replaceState(null,'','?s='+n+(a>0?'&a='+a:''));
   }catch{$('text').innerHTML='<div class="err">تعذّر تحميل السورة.<br><button id="rt2">إعادة المحاولة</button></div>';$('rt2').onclick=()=>open(n,a)}
 }
-function home(){stopAudio();closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();renderDayAyah();renderKh();syncBack();window.scrollTo(0,0);history.replaceState(null,'','./')}
+function home(){stopAudio();closeSheet();keepAwake(false);$('reader').style.display='none';$('home').style.display='block';renderResume();renderDayAyah();renderKh();syncBack();window.scrollTo(0,0);history.replaceState(null,'','./')}
 
 function openSheet(i){
   sel=i;const m=IDX[cur-1];
@@ -233,6 +247,7 @@ document.addEventListener('click',async e=>{
     case 'pp':if(au.paused){au.play().catch(()=>{});b.textContent='⏸'}else{au.pause();b.textContent='▶'}return;
     case 'pn':return playAyah(playing-1);
     case 'pf':return playAyah(playing+1);
+    case 'pt':return cycleSleep();
     case 'px':return stopAudio();
     case 'ap':return stepAyah(-1);
     case 'an':return stepAyah(1);
