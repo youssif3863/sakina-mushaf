@@ -23,6 +23,7 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
 #q{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16px;outline:none}
 #q:focus{border-color:var(--accent)}
 .resume{margin:12px 0;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#0a4a37);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:var(--shadow)}
+.dayc{margin:12px 0;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--accent2);box-shadow:var(--shadow)}.dayc .dl{font-size:12px;color:var(--sub);margin-bottom:6px}.dayc .dar{font-family:'Amiri Quran',serif;font-size:calc(var(--fs)*.9);line-height:2;text-align:center}.dayc button{margin-top:8px;background:var(--accent);color:#fff;padding:8px 16px;border-radius:10px;font-weight:700}
 .resume b{font-size:16px}.resume small{opacity:.85;display:block;margin-top:2px}
 .resume button{background:#fff;color:#0a4a37;padding:8px 16px;border-radius:10px;font-weight:700}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -88,6 +89,7 @@ body.pl{padding-bottom:70px}
   <input id="q" type="search" inputmode="search" placeholder="ابحث باسم السورة أو رقمها أو بكلمات من آية…" autocomplete="off">
   <div id="vres"></div>
   <div id="resume"></div>
+  <div id="dayayah"></div>
   <div id="kh"></div>
   <div id="list"></div>
   </div>
@@ -145,6 +147,13 @@ function renderResume(){
   const p=LS.get('pos',null);
   $('resume').innerHTML=p&&IDX[p.s-1]?`<div class="resume"><div><b>تابع القراءة</b><small>${IDX[p.s-1].name} · الآية ${ar(p.a)}</small></div><button data-go="${p.s}:${p.a}">متابعة</button></div>`:'';
 }
+const DAYREFS=['2:152','2:153','2:186','2:201','2:255','2:286','3:8','3:139','3:159','3:173','7:56','8:46','9:40','12:87','13:28','14:7','15:99','16:97','16:128','17:24','18:10','20:25','20:46','21:87','24:35','25:74','29:69','33:41','33:56','39:10','39:53','40:60','49:10','49:13','51:56','57:4','59:22','65:2','65:3','93:3','94:5','94:6','103:1','112:1','2:155','3:200','16:127','11:115','48:4','12:86','35:34','11:6','51:58','29:60','34:39','3:135','4:110','25:70','20:82','66:8','31:12','16:18','27:19','27:62','7:55','9:51','8:2','26:80','17:82','21:83','10:57','17:23','31:14','46:15','20:114','58:11','39:9','96:1','65:7','2:185','2:45','29:45','20:14','2:238','33:35','30:21','66:6','41:34','3:134','16:90','7:199','17:9','1:6'];
+async function renderDayAyah(){
+  const el=$('dayayah');if(!el||!IDX.length)return;
+  const r=DAYREFS[Math.floor(Date.parse(todayStr())/864e5)%DAYREFS.length].split(':'),s=+r[0],a=+r[1];
+  try{const d=await getJSON('data/'+s+'.json');const t=d&&d.a&&d.a[a-1];if(!t||!IDX[s-1])return;
+    el.innerHTML=`<div class="dayc"><div class="dl">✨ آية اليوم · ${IDX[s-1].name} · الآية ${ar(a)}</div><div class="dar">${t} ﴿${ar(a)}﴾</div><button data-go="${s}:${a}">قراءة وتفسير</button></div>`}catch{}
+}
 const todayStr=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const dayNo=()=>KH?Math.floor((Date.parse(todayStr())-Date.parse(KH.start))/864e5)+1:0;
 const rng=d=>[Math.floor((d-1)*TOTAL/KH.days)+1,Math.floor(d*TOTAL/KH.days)];
@@ -155,7 +164,7 @@ function renderKh(){
   let t=1;while(t<=KH.days&&KH.done.includes(t))t++;
   if(t>KH.days){el.innerHTML='<div class="kh"><b>🎉 ما شاء الله، أتممت الختمة</b><small>تقبّل الله منك. ابدأ ختمة جديدة متى شئت.</small><div class="row"><button class="pri" data-khreset="1">ختمة جديدة</button></div></div>';return}
   const d=Math.min(dayNo(),KH.days),[a,b]=rng(t),late=t<d?d-t:0,pr=PAGES[a-1]||[1,1];
-  el.innerHTML=`<div class="kh"><b>📅 ختمتي · اليوم ${ar(t)} من ${ar(KH.days)}</b><small>وردك: الصفحات ${ar(a)} – ${ar(b)}${late?' · متأخر '+ar(late)+' يومًا، لا بأس، أكمل بهدوء':''}</small><div class="pb"><i style="width:${Math.round(KH.done.length/KH.days*100)}%"></i></div><div class="row"><button class="pri" data-go="${pr[0]}:${pr[1]}">افتح وردي</button><button data-khdone="${t}">✅ أتممت وردي</button><button data-khreset="1">تغيير</button></div></div>`;
+  el.innerHTML=`<div class="kh"><b>📅 ختمتي · اليوم ${ar(t)} من ${ar(KH.days)}</b><small>وردك: الصفحات ${ar(a)} – ${ar(b)}${late?' · متأخر '+ar(late)+' يومًا، لا بأس، أكمل بهدوء':''}</small><div class="pb"><i style="width:${Math.round(KH.done.length/KH.days*100)}%"></i></div><div class="row"><button class="pri" data-go="${pr[0]}:${pr[1]}">افتح وردي</button><button data-khdone="${t}">✅ أتممت وردي</button><button data-khreset="1">تغيير</button></div><small style="display:block;margin-top:8px">🔔 للتذكير اليومي بوردك: اكتب /khatma في بوت سكينة</small></div>`;
 }
 function pageOf(s,a){let lo=0,hi=PAGES.length-1,r=0;const k=s*1000+a;while(lo<=hi){const m=(lo+hi)>>1;if(PAGES[m][0]*1000+PAGES[m][1]<=k){r=m;lo=m+1}else hi=m-1}return r+1}
 const RECS=[['Alafasy_128kbps','مشاري العفاسي'],['Husary_128kbps','محمود خليل الحصري'],['Minshawy_Murattal_128kbps','محمد صديق المنشاوي'],['Abdul_Basit_Murattal_192kbps','عبد الباسط عبد الصمد'],['Abdurrahmaan_As-Sudais_192kbps','عبد الرحمن السديس'],['Saood_ash-Shuraym_128kbps','سعود الشريم'],['Hudhaify_128kbps','علي الحذيفي']];
@@ -188,7 +197,7 @@ async function open(n,a=0,push=true){
     if(push)history.replaceState(null,'','?s='+n+(a>0?'&a='+a:''));
   }catch{$('text').innerHTML='<div class="err">تعذّر تحميل السورة.<br><button id="rt2">إعادة المحاولة</button></div>';$('rt2').onclick=()=>open(n,a)}
 }
-function home(){stopAudio();closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();renderKh();syncBack();window.scrollTo(0,0);history.replaceState(null,'','./')}
+function home(){stopAudio();closeSheet();$('reader').style.display='none';$('home').style.display='block';renderResume();renderDayAyah();renderKh();syncBack();window.scrollTo(0,0);history.replaceState(null,'','./')}
 
 function openSheet(i){
   sel=i;const m=IDX[cur-1];
@@ -257,7 +266,7 @@ $('q').addEventListener('input',e=>{renderList(e.target.value);clearTimeout(vT);
   $('rc').innerHTML=RECS.map(r=>`<option value="${r[0]}"${r[0]===rec?' selected':''}>${r[1]}</option>`).join('');$('rc').onchange=e=>{rec=e.target.value;LS.set('rec',rec);if(playing>=0)playAyah(playing)};
   if(CS){const p=await cloudGet('pos');if(p&&p.s>=1&&p.s<=114&&!LS.get('pos',null))LS.set('pos',p)}
   if(CS&&!KH){const k=await cloudGet('kh');if(k&&k.days&&Array.isArray(k.done)){KH=k;LS.set('kh',k)}}
-  renderResume();renderKh();
+  renderResume();renderDayAyah();renderKh();
   const P=new URLSearchParams(location.search),sp=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'';
   setTab(({quran:'s',stories:'st',hadith:'h'})[P.get('tab')]||tab);
   let s=+P.get('s'),a=+P.get('a')||0;
